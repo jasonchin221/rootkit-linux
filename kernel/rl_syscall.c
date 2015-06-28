@@ -8,7 +8,7 @@
 
 #include "rl_syscall.h"
 
-static void *
+static void **
 rl_sys_call_table_old;
 
 static ulong 
@@ -21,59 +21,67 @@ rl_get_idt_base(void)
      return idt_table.it_base;
 }
 
-
-struct idt_gate
+static ulong 
+rl_get_sys_call_entry(ulong idt_base)
 {
-    unsigned short off1;
-    unsigned short sel;
-    unsigned char nome,flags;
-    unsigned short off2;
-}__attribute__((packed));
+    rl_idt_gate_t   sys_call;
+    ulong           sys_call_entry;
 
-unsigned int get_sys_call_entry(unsigned int idt_base)
-{
-    struct idt_gate sys_call;
-    memcpy(&sys_call,idt_base+8*0x80,sizeof(struct idt_gate));
-    unsigned int sys_call_entry=(sys_call.off2 << 16) | sys_call.off1;
+    memcpy(&sys_call, (void *)(idt_base + 8*0x80), sizeof(sys_call));
+    sys_call_entry = (sys_call.ig_off2 << 16) | sys_call.ig_off1;
+
     return sys_call_entry;
 }
 
-unsigned int get_sys_call_table_entry(unsigned int sys_call_entry,char * exp,unsigned int cope)
+static ulong 
+rl_get_sys_call_table(ulong sys_call_entry, char *exp, u32 cope)
 {
-    char * begin=sys_call_entry;
-    char * end=sys_call_entry+cope;
-    for(;begin<end;begin++)
-    {
-        if(begin[0]==exp[0]&&begin[1]==exp[1]&&begin[2]==exp[2])
-            return *((unsigned int *)(begin+3));
+    char *begin;
+    char *end;
+
+    begin = (char *)sys_call_entry;
+    end = (char *)(sys_call_entry + cope);
+
+    for (; begin < end; begin++) {
+        if (begin[0] == exp[0] && 
+                begin[1] == exp[1] && 
+                begin[2] == exp[2]) {
+            return *((ulong *)(begin + 3));
+        }
     }
+
     return 0;
 }
 
-
-void setback_cr0(unsigned int val)
+static void 
+rl_setback_cr0(ulong val)
 {
-    asm volatile ("movl %%eax, %%cr0"
+    __asm__ __volatile__ ("movl %%eax, %%cr0"
             :
-            : "a"(val)
-            );
+            : "a"(val));
 }
 
-unsigned int clear_cr0_save()
+static ulong 
+rl_clear_cr0_save(void)
 {
-    unsigned int cr0 = 0;
-    unsigned int ret;
+    ulong   cr0 = 0;
+    ulong   ret;
+
     __asm__ __volatile__ ("movl %%cr0, %%eax":"=a"(cr0));
     ret = cr0;
 
     cr0 &= 0xfffeffff;
-    asm volatile ("movl %%eax, %%cr0":: "a"(cr0));
+    __asm__ __volatile__ ("movl %%eax, %%cr0":: "a"(cr0));
+
     return ret;
 }
 
-asmlinkage long my_mkdir(const char *name,int mod)
+asmlinkage long 
+my_mkdir(const char *name,int mod)
 {
-    printk(KERN_ALERT"mkdir call is intercepted\n");
+    printk(KERN_ALERT"mkdir call is intercepted, name = %s\n", name);
+
+    return 0;
 }
 
 int
@@ -82,21 +90,22 @@ rl_get_syscall_table(void)
     ulong   idt_base;
     ulong   call_entry;
     ulong   call_table;
+    ulong   cr0;
 
     idt_base = rl_get_idt_base();
-    call_entry = get_sys_call_entry(idt_base);
-    call_table = get_sys_call_table_entry(call_entry, "\xff\x14\x85", 100);
-    void ** table=(void **)call_table;
+    call_entry = rl_get_sys_call_entry(idt_base);
+    call_table = rl_get_sys_call_table(call_entry, "\xff\x14\x85", 100);
+    rl_sys_call_table_old = (void **)call_table;
 
-    printk("call_table = %x\n", table);
+    printk("call_table = %p\n", rl_sys_call_table_old);
 
     //wp clear
-    unsigned int cr0=clear_cr0_save();
+    cr0 = rl_clear_cr0_save();
     // intercept mkdir call
-    table[__NR_mkdir]=my_mkdir;
+    rl_sys_call_table_old[__NR_mkdir] = my_mkdir;
     //                    //   table[__NR_open]=my_mkoep;
     //set wp bit
-    setback_cr0(cr0);
+    rl_setback_cr0(cr0);
 
     return 0;
 }
