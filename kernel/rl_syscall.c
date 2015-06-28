@@ -6,6 +6,8 @@
 
 #include "rl_syscall.h"
 
+#define RL_CR0_FLAG     0x10000
+
 static void **
 rl_sys_call_table_curr;
 static void *
@@ -97,7 +99,7 @@ rl_clear_cr0_save(void)
     __asm__ __volatile__ ("movl %%cr0, %%eax":"=a"(cr0));
     ret = cr0;
 
-    cr0 &= 0xfffeffff;
+    cr0 &= ~RL_CR0_FLAG;
     __asm__ __volatile__ ("movl %%eax, %%cr0":: "a"(cr0));
 
     return ret;
