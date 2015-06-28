@@ -3,10 +3,10 @@
 # x86 Platform-Specific Drivers
 #
 
-MODULE_NAME = rootkit-linux
+MODULE_NAME = rootkit_linux
 ifneq ($(KERNELRELEASE),)
 obj-m := $(MODULE_NAME).o 
-$(MODULE_NAME)-objs := rl_module.o rl_kernel.o
+$(MODULE_NAME)-objs := rl_module.o rl_syscall.o
 
 else
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
