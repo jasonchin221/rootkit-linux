@@ -18,6 +18,12 @@ struct _rl_idt_gate_t {
 
 typedef struct _rl_idt_gate_t rl_idt_gate_t;
 
-extern int rl_get_syscall_table(void);
+typedef struct _rl_syscall_hijack_t {
+    u16     sh_syscall_num;
+    void    *sh_syscall_func;
+} rl_syscall_hijack_t;
+
+extern int rl_modify_syscall_table(void);
+extern void rl_restore_syscall_table(void);
 
 #endif
