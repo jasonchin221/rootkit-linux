@@ -25,5 +25,9 @@ typedef struct _rl_syscall_hijack_t {
 
 extern int rl_modify_syscall_table(void);
 extern void rl_restore_syscall_table(void);
+extern void *rl_get_sys_call_table_addr(void);
+extern void rl_setback_cr0(ulong val);
+extern ulong rl_clear_cr0_save(void);
+extern ulong rl_get_sys_call_table(ulong call_entry, char *exp, u32 cope);
 
 #endif
