@@ -29,14 +29,16 @@ static int __init rl_init(void)
 #endif
 #endif
 
-    rl_modify_syscall_table();
+//    rl_modify_syscall_table();
+    rl_sysenter_hijack();
 
 	return 0;
 }
 
 static void __exit rl_exit(void)
 {
-    rl_restore_syscall_table();
+    rl_sysenter_restore();
+    //rl_restore_syscall_table();
     printk("RL Module exit!\n");
 }
 

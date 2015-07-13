@@ -6,7 +6,7 @@
 MODULE_NAME = rootkit_linux
 ifneq ($(KERNELRELEASE),)
 obj-m := $(MODULE_NAME).o 
-$(MODULE_NAME)-objs := rl_module.o rl_syscall.o rl_syscall_32.o
+$(MODULE_NAME)-objs := rl_module.o rl_int80.o rl_int80_32.o rl_sysenter.o
 
 else
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
