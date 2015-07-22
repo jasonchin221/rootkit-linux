@@ -11,27 +11,22 @@
 
 static u32 rl_sysenter_old;
 
-asmlinkage char* my_function(void);
+asmlinkage void my_function(void);
 unsigned long handler_code=(unsigned long)&my_function;
-extern asmlinkage void my_stub(void);
 
-void stub_trtr(void)
+void my_stub(void)
 {
-    __asm__ (".globl my_stub\n\t"
-            ".align 4,0x90\n\t"
-            "my_stub:\n\t"
-            "       call *%0\n\t"
+    __asm__ ("       call *%0\n\t"
             "       jmp  *%1\n\t"
             :
             :"m"(handler_code),"m"(rl_sysenter_old));
 }
 
-asmlinkage char* my_function(void)
+asmlinkage void my_function(void)
 {
     int my_eax;
     __asm__("movl %%eax,%0;":"=r"(my_eax));
     printk("Syscall num is %d\n", my_eax);
-    return NULL;
 }
 
 int
@@ -46,6 +41,8 @@ rl_sysenter_hijack(void)
     func = (ulong)my_stub;
     low = (u32)func;
     high = (u32)((u64)func >> 32);
+//    low = rl_sysenter_old;
+    high = 0;
     wrmsr(MSR_IA32_SYSENTER_EIP, low, high);
 
     return 0;

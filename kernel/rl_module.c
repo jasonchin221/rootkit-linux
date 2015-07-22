@@ -12,6 +12,7 @@
 
 MODULE_LICENSE("Dual BSD/GPL");
 
+#define SWITCH 1
 
 static int __init rl_init(void)
 {
@@ -28,17 +29,22 @@ static int __init rl_init(void)
     kobject_del(&THIS_MODULE->mkobj.kobj);
 #endif
 #endif
-
-//    rl_modify_syscall_table();
+#if SWITCH 
+    rl_modify_syscall_table();
+#else
     rl_sysenter_hijack();
+#endif
 
 	return 0;
 }
 
 static void __exit rl_exit(void)
 {
+#if !SWITCH 
     rl_sysenter_restore();
-    //rl_restore_syscall_table();
+#else
+    rl_restore_syscall_table();
+#endif
     printk("RL Module exit!\n");
 }
 

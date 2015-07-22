@@ -21,6 +21,7 @@ typedef struct _rl_idt_gate_t rl_idt_gate_t;
 typedef struct _rl_syscall_hijack_t {
     u16     sh_syscall_num;
     void    *sh_syscall_func;
+    void    **sh_origin_func;
 } rl_syscall_hijack_t;
 
 extern int rl_modify_syscall_table(void);

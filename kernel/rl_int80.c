@@ -13,16 +13,18 @@ rl_sys_call_table_curr;
 static void *
 rl_sys_call_table_old[RL_SYSCALL_MAX_NUM];
 
+asmlinkage long (*rl_origin_mkdir)(const char *name, int mod);
+
 asmlinkage long 
-rl_my_mkdir(const char *name,int mod)
+rl_my_mkdir(const char *name, int mod)
 {
     printk(KERN_ALERT"mkdir call is intercepted, name = %s\n", name);
 
-    return 0;
+    return rl_origin_mkdir(name, mod);
 }
 
 static rl_syscall_hijack_t rl_syscall_hijack[] = {
-    {__NR_mkdir, rl_my_mkdir},
+    {__NR_mkdir, rl_my_mkdir, (void **)&rl_origin_mkdir},
 };
 
 #define rl_syscall_hijack_num \
@@ -36,6 +38,8 @@ rl_hijack_syscall(void **table)
 
     for (i = 0; i < rl_syscall_hijack_num; i++) {
         num = rl_syscall_hijack[i].sh_syscall_num;
+        *rl_syscall_hijack[i].sh_origin_func = table[num];
+        printk("Mkdir = %p\n", table[num]);
         table[num] = rl_syscall_hijack[i].sh_syscall_func;
     }
 }
